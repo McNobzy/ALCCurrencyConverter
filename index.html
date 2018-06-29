@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Currency Converter</title>
+
+</head>
+<body>
+	<section id="root">
+		<ul id="currency">
+
+		</ul>
+	</section>
+	<script>
+	// fetch('http://free.currencyconverterapi.com/api/v5/countries')
+  // .then(function(response) {
+	//
+	// 	return response.json();;
+  //   //return results;
+  // })
+  // .then(function(myJson) {
+  //   console.log(myJson.results.ALL);
+  // }).catch(function(error){
+	// 	console.log('error occurred', error);
+	// });
+
+		var xhttp = new XMLHttpRequest();
+			xhttp.onreadystatechange = function() {
+			    if (this.readyState == 4 && this.status == 200) {
+			       // Typical action to be performed when the document is ready:
+			       //
+			       var response = JSON.parse(xhttp.responseText);
+						 var results =  response.results;
+						 //document.getElementById("root").innerHTML = xhttp.responseText;
+			       //var currName = JSON.stringify(response.currencyName);
+
+			    console.log(results);
+			}
+		};
+		xhttp.open("GET", "http://free.currencyconverterapi.com/api/v5/currencies", true);
+		xhttp.send();
+
+
+		// var xhttp1 = new XMLHttpRequest();
+		// xhttp1.onreadystatechange = function() {
+		//     if (this.readyState == 4 && this.status == 200) {
+		//        // Typical action to be performed when the document is ready:
+		//        //document.getElementById("demo").innerHTML = xhttp.responseText;
+		//        var response = xhttp1.responseText;
+		//        //var currName = JSON.stringify(response.currencyName);
+		//
+		//     console.log(response);
+		// }
+		// };
+		// xhttp1.open("GET", "currenCov.js", true);
+		// xhttp1.send();
+
+	</script>
+</body>
+</html>
