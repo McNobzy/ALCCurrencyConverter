@@ -7,45 +7,68 @@
 
 	<script type="text/javascript" src="/lib/idb.js"></script>
 	<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-	<script>
-		function registerServiceWorker(){
-			if (!navigator.serviceWorker) return;
 
-		  var indexController = this;
-
-		  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-		    if (!navigator.serviceWorker.controller) {
-		      return;
-		    }
-
-		    // if (reg.waiting) {
-		    //   indexController._updateReady(reg.waiting);
-		    //   return;
-		    // }
-
-		    if (reg.installing) {
-		      indexController._trackInstalling(reg.installing);
-		      return;
-		    }
-
-		    reg.addEventListener('updatefound', function() {
-		      indexController._trackInstalling(reg.installing);
-		    });
-		  });
-
-		  // Ensure refresh is only called once.
-		  // This works around a bug in "force update on reload".
-		  var refreshing;
-		  navigator.serviceWorker.addEventListener('controllerchange', function() {
-		    if (refreshing) return;
-		    window.location.reload();
-		    refreshing = true;
-		  });
-		}
-	</script>
 
 </head>
-<body onload="registerServiceWorker()">
+<body onload="openDatabase()">
+	<script>
+		//function registerServiceWorker(){
+					if ('serviceWorker' in navigator) {
+		  // Register a service worker hosted at the root of the
+		  // site using the default scope.
+
+			navigator.serviceWorker.register('/sw.js').then(function(registration) {
+				if (registration.status == 'registered'){
+					return;
+				}
+						console.log('Service worker registration succeeded:', registration);
+					}).catch(function(error) {
+						console.log('Service worker registration failed:', error);
+					});
+				} else {
+				console.log('Service workers are not supported.');
+			}
+
+
+			function openDatabase() {
+			  // If the browser doesn't support service worker,
+			  // we don't care about having a database
+
+
+
+			  if (!navigator.serviceWorker) {
+			    return Promise.resolve();
+
+			  }
+
+			  return idb.open('currenCov', 1, function(upgradeDb) {
+			    var store = upgradeDb.createObjectStore('currencies', {
+			      keyPath: 'id'
+			    });
+			    //store.createIndex('by-date', 'time');
+
+
+					dbPromise.then(function(db) {
+						var tx = db.transaction('keyval', 'readwrite');
+						var keyValStore = tx.objectStore('keyval');
+					//	keyValStore.put('cat', 'favoriteAnimal');
+						fetch('https://free.currencyconverterapi.com/api/v5/currencies').then(response => {
+							return response.json();
+						}).then(currency => {
+							currency = Object.keys(response.results);
+							for (let i = 0; i < currency.length; i++){
+								keyValStore.put(currencies.results[keys[i]].currencyName, keys[i])
+							}
+
+						})
+						return tx.complete;
+					}).then(function() {
+						console.log('Added favoriteAnimal:cat to keyval');
+					});
+			  });
+			}
+		//}
+	</script>
 		<!--
 		<h2>Currency Converter</h2>
 		<label for="">From Currency</label>
@@ -71,10 +94,10 @@
 		 </select><br>
 		 <br>
 		 <br>
-		 <label for="convertedTotal">Total</label>
-		 <input type="text" name="convertedTotal" class="form-control" value="">
+		 <label for="convertedTotal">Converted Total</label>
+		 <input type="text" id="convertedTotal" class="form-control" value="">
 		 <br>
-		 <input type="submit" class="btn btn-info" onsubmit="convertCurrency()" name="submit" value="Convert">
+		 <input type="submit" class="btn btn-info" onclick="convertCurr()" name="submit" value="Convert">
 </div>
 
 		<!-- <button type="button" name="button" onclick="UserAction()">Convert</button> -->
@@ -105,8 +128,9 @@
 			//console.log(Object.keys(currencies.results));
 			let keys = Object.keys(currencies.results);
 			for (let i = 0; i< keys.length;i++){
-				console.log(keys[i]);
-				output += '<option>'+keys[i]+'</option>'
+				//console.log(currencies.results[keys[i]].currencyName);
+				let currName = currencies.results[keys[i]].currencyName;
+				output += '<option>'+keys[i]+' - '+ currName+'</option>'
 			}
 			document.getElementById('fromCurrency').innerHTML = output;
 			document.getElementById('toCurrency').innerHTML = output;
@@ -114,6 +138,30 @@
 		// document.getElementById('fromCurrency').innerHTML.value = output;
     //console.log(currencies.results);
   });
+
+	function convertCurr(){
+		let amountToConvert = document.getElementById('amount').value;
+		let fromCurr = document.getElementById('fromCurrency').value.substring(0, 3);
+		let toCurr = document.getElementById('toCurrency').value.substring(0, 3);
+		let finalTotal  = document.getElementById('convertedTotal');
+		let query = fromCurr + '_' + toCurr;
+		let url = "https://free.currencyconverterapi.com/api/v5/convert?q="+ query +"&compact=ultra";
+		console.log(fromCurr);
+		fetch(url).then(response => {
+			return response.json();
+		}).then(rate => {
+			console.log(rate);
+			convRate = Object.values(rate)[0];
+			console.log(convRate);
+			let total = (amountToConvert * convRate);
+			console.log(total);
+			finalTotal.value = total;
+		}).catch(error => {
+			console.log("Error occured", error);
+		});
+
+
+	}
 
 
 
@@ -136,7 +184,7 @@
 		let from = encodeURIComponent(document.getElementById('fromCurrency').value);
 		let to = encodeURIComponent(document.getElementById('toCurrency').value);
 		const query = from + '_' + to;
-		var urlToConvert = "http://free.currencyconverterapi.com/api/v5/convert?q="+ query +"&compact=ultra";
+		var urlToConvert = "https://free.currencyconverterapi.com/api/v5/convert?q="+ query +"&compact=ultra";
 
 		var xttp = new XMLHttpRequest();
 		var response = JSON.parse(xttp.responseText);
